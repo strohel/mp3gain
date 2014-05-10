@@ -1323,8 +1323,10 @@ void fullUsage(char *progname) {
 		fprintf(stderr,"\t              album: a single gain change is applied to all files, so\n");
 		fprintf(stderr,"\t              their loudness relative to each other remains unchanged,\n");
 		fprintf(stderr,"\t              but the average album loudness is normalized)\n");
-		fprintf(stderr,"\t%cm <i> - modify suggested MP3 gain by integer i\n",SWITCH_CHAR);
-		fprintf(stderr,"\t%cd <n> - modify suggested dB gain by floating-point n\n",SWITCH_CHAR);
+		fprintf(stderr,"\t%cm <i> - modify suggested MP3 gain by integer i; strohel: this is\n",SWITCH_CHAR);
+        fprintf(stderr,"\t         applied only to the track contents and compensated for in tag\n");
+		fprintf(stderr,"\t%cd <n> - modify suggested dB gain by floating-point n; strohel this\n",SWITCH_CHAR);
+        fprintf(stderr,"\t         os applied both to track contents and tag\n");
 		fprintf(stderr,"\t%cc - ignore clipping warning when applying gain\n",SWITCH_CHAR);
 		fprintf(stderr,"\t%co - output is a database-friendly tab-delimited list\n",SWITCH_CHAR);
 		fprintf(stderr,"\t%ct - writes modified data to temp file, then deletes original\n",SWITCH_CHAR);
@@ -2320,6 +2322,9 @@ int main(int argc, char **argv) {
 						numFiles--;
 					}
 					else {
+                        /* this is applied both to tag and file contents: */
+                        dBchange += dBGainMod;
+
 						/* even if skipTag is on, we'll leave this part running just to store the minpeak and maxpeak */
 						curTag = tagInfo + mainloop;
 						if (!maxAmpOnly) {
@@ -2349,10 +2354,6 @@ int main(int argc, char **argv) {
 							curTag->haveTrackPeak = !0;
 							curTag->trackPeak = maxsample / 32768.0;
 						}
-						/* the TAG version of the suggested Track Gain should ALWAYS be based on the 89dB standard.
-						   So we don't modify the suggested gain change until this point */
-
-						dBchange += dBGainMod;
 
 						dblGainChange = dBchange / (5.0 * log10(2.0));
 
