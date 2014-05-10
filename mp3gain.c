@@ -2386,7 +2386,25 @@ int main(int argc, char **argv) {
 								fclose(inf);
 							inf = NULL;
 							goAhead = !0;
-							
+
+                            if (autoClip) {
+                                int intMaxNoClipGain = (int)(floor(4.0 * log10(32767.0 / maxsample) / log10(2.0)));
+#define max(a, b) (a > b ? a : b)
+                                intMaxNoClipGain = max(intMaxNoClipGain, 0);
+                                if (intGainChange > intMaxNoClipGain) {
+                                    fprintf(stdout,"Auto-clipping mp3 gain change of %d to %s (original suggested gain was %d)\n",intMaxNoClipGain,argv[mainloop],intGainChange);
+                                    intGainChange = intMaxNoClipGain;
+                                }
+                            } else if (!ignoreClipWarning) {
+                                if (maxsample * (Float_t)(pow(2.0,(double)(intGainChange)/4.0)) > 32767.0) {
+                                    if (queryUserForClipping(argv[mainloop],intGainChange)) {
+                                        fprintf(stdout,"Clipping mp3 gain change of %d to %s...\n",intGainChange,argv[mainloop]);
+                                    } else {
+                                        goAhead = 0;
+                                    }
+                                }
+                            }
+
 							if (intGainChange == 0) {
 								fprintf(stdout,"No changes to %s are necessary\n",argv[mainloop]);
 								if (!skipTag && tagInfo[mainloop].dirty) {
@@ -2395,21 +2413,6 @@ int main(int argc, char **argv) {
 								}
 							}
 							else {
-                                if (autoClip) {
-                                    int intMaxNoClipGain = (int)(floor(4.0 * log10(32767.0 / maxsample) / log10(2.0)));
-                                    if (intGainChange > intMaxNoClipGain) {
-                                        fprintf(stdout,"Applying auto-clipped mp3 gain change of %d to %s\n(Original suggested gain was %d)\n",intMaxNoClipGain,argv[mainloop],intGainChange);
-                                        intGainChange = intMaxNoClipGain;
-                                    }
-                                } else if (!ignoreClipWarning) {
-                                    if (maxsample * (Float_t)(pow(2.0,(double)(intGainChange)/4.0)) > 32767.0) {
-                                        if (queryUserForClipping(argv[mainloop],intGainChange)) {
-    									    fprintf(stdout,"Applying mp3 gain change of %d to %s...\n",intGainChange,argv[mainloop]);
-                                        } else {
-                                            goAhead = 0;
-                                        }
-                                    }
-                                }
                                 if (goAhead) {
 									fprintf(stdout,"Applying mp3 gain change of %d to %s...\n",intGainChange,argv[mainloop]);
                                     if (skipTag) {
